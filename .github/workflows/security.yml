@@ -1,0 +1,68 @@
+name: security
+
+# A "shift-left" pipeline: every push and PR runs the security gates.
+# Each job fails the build on its own severity threshold.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run secretscan
+        run: |
+          git clone --depth 1 https://github.com/Akhil-1527/secretscan /tmp/secretscan
+          python3 /tmp/secretscan/secretscan.py . --exclude .git --exclude tests
+
+  sast:
+    name: SAST (Bandit + Semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bandit
+        run: |
+          pip install bandit
+          bandit -r app -ll        # fail on MEDIUM and above
+      - name: Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: p/python p/security-audit p/owasp-top-ten
+
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit -r app/requirements.txt
+
+  iac:
+    name: IaC scan (Checkov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          quiet: true
+          soft_fail: false
