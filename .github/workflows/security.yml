@@ -1,7 +1,8 @@
 name: security
 
-# A "shift-left" pipeline: every push and PR runs the security gates.
-# Each job fails the build on its own severity threshold.
+# A "shift-left" pipeline: every push and PR runs the full set of gates.
+# Each job fails the build on its own severity threshold, so known-bad code
+# does not reach a deployable state.
 
 on:
   push:
@@ -66,3 +67,33 @@ jobs:
           directory: .
           quiet: true
           soft_fail: false
+
+  container:
+    name: Container scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t app:${{ github.sha }} .
+      - name: Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: app:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+  dast:
+    name: DAST (OWASP ZAP baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start app
+        run: |
+          docker build -t app:scan .
+          docker run -d -p 5000:5000 --name app app:scan
+          for i in $(seq 1 20); do curl -sf http://localhost:5000/health && break || sleep 2; done
+      - name: ZAP baseline
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: http://localhost:5000
