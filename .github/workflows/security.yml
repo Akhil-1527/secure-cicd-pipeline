@@ -18,7 +18,7 @@ jobs:
     name: Secret scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
       - name: Run secretscan
@@ -30,8 +30,8 @@ jobs:
     name: SAST (Bandit + Semgrep)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: Bandit
@@ -39,16 +39,16 @@ jobs:
           pip install bandit
           bandit -r app -ll        # fail on MEDIUM and above
       - name: Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: p/python p/security-audit p/owasp-top-ten
+        run: |
+          pip install semgrep==1.178.0
+          semgrep scan --config p/python --config p/security-audit --config p/owasp-top-ten --error --metrics=off
 
   dependencies:
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: pip-audit
@@ -60,9 +60,9 @@ jobs:
     name: IaC scan (Checkov)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@5798bad4f6dd9c1fb67ae3ec10d42d8fb67037c4 # v12.3126.0
         with:
           directory: .
           quiet: true
@@ -72,11 +72,11 @@ jobs:
     name: Container scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Build image
         run: docker build -t app:${{ github.sha }} .
       - name: Trivy
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: app:${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -87,14 +87,14 @@ jobs:
     name: DAST (OWASP ZAP baseline)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Start app
         run: |
           docker build -t app:scan .
           docker run -d -p 5000:5000 --name app app:scan
           for i in $(seq 1 20); do curl -sf http://localhost:5000/health && break || sleep 2; done
       - name: ZAP baseline
-        uses: zaproxy/action-baseline@v0.15.0
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://localhost:5000
           allow_issue_writing: false
