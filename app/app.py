@@ -1,4 +1,4 @@
-"""Minimal Flask API — the target application for the security pipeline.
+"""Minimal Flask API used as the target application for the security pipeline.
 
 Kept deliberately small and clean so the pipeline stays green; the point of the
 repo is the gates in .github/workflows/security.yml, not the app.

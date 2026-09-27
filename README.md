@@ -2,7 +2,7 @@
 
 A reference "shift-left" CI/CD security pipeline for GitHub Actions. It wires
 the gates I run on every change so known-bad code never reaches a deployable
-state — each job fails the build on its own severity threshold.
+state. Each job fails the build on its own severity threshold.
 
 The repo ships a tiny Flask app purely as a target; the point is
 [`.github/workflows/security.yml`](.github/workflows/security.yml).
@@ -34,7 +34,7 @@ Installs the scanners on demand and runs the same gates the pipeline does.
 
 A minimal Flask notes API (`/health`, `GET /notes`, `POST /notes`) with tests,
 packaged in a hardened Dockerfile (pinned slim base, non-root user, gunicorn).
-Kept clean so the pipeline stays green — swap in your own service and the gates
+Kept clean so the pipeline stays green. Swap in your own service and the gates
 carry over unchanged.
 
 ```bash
